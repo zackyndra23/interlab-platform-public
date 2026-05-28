@@ -1,0 +1,30 @@
+# redis-global — Phase 1.5, Mechanism B (deviation #8). Shared cache/session/rate-limit for
+# FUTURE apps on interlab-global. Existing webapp keeps its own interlab-redis (deviation #14
+# — NOT migrated). Bound to 127.0.0.1:6380 for SSH-tunneled RedisInsight access (mirrors
+# postgres-global's 127.0.0.1:5440 pattern). Run: cd coolify-resources/redis-global && docker compose up -d
+name: redis-global
+services:
+  redis-global:
+    image: redis:7.4-alpine
+    container_name: redis-global
+    restart: unless-stopped
+    networks: [interlab-global]
+    ports:
+      - "127.0.0.1:6380:6379"
+    env_file: [./.env]
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis_global_data:/data
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  interlab-global:
+    external: true
+
+volumes:
+  redis_global_data:

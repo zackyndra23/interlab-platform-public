@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme tokens — light defaults, dark swap via [data-theme="dark"].
+ * Values align with shadcn/ui's default neutral palette so the eventual
+ * shadcn component port doesn't fight the CSS layer.
+ */
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+        --primary: 221.2 83.2% 53.3%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 221.2 83.2% 53.3%;
+        --radius: 0.5rem;
+
+        /* Typography — next/font/google overrides these via a class on <html>; these are fallbacks. */
+        --font-display: 'Playfair Display', Georgia, serif;
+        --font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+
+        /* Interlab brand */
+        --brand-red: 348 86% 42%;         /* #C8102E */
+        --brand-red-hover: 348 86% 48%;
+        --brand-red-light: 348 86% 92%;
+
+        /* Login page specific */
+        --login-panel-bg: 220 25% 8%;
+        --login-grid-line: 210 30% 20%;
+        --glass-bg: 0 0% 100%;
+        --glass-bg-alpha: 0.04;
+        --glass-border: 0 0% 100%;
+        --glass-border-alpha: 0.10;
+    }
+
+    [data-theme="dark"] {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 217.2 91.2% 59.8%;
+        --primary-foreground: 222.2 47.4% 11.2%;
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+        --ring: 348 86% 42%;
+
+        --login-panel-bg: 222 40% 5%;
+        --glass-bg-alpha: 0.03;
+        --glass-border-alpha: 0.08;
+    }
+
+    * {
+        border-color: hsl(var(--border));
+    }
+    html, body {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+    }
+    body {
+        font-family: var(--font-body), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Login page — keyframes & utilities                                  */
+/* ------------------------------------------------------------------ */
+
+@keyframes panel-slide-left {
+    from { transform: translateX(-60px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes panel-slide-up {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes logo-drop {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+@keyframes stagger-fade {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes blob-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -15px) scale(1.03); }
+    66%      { transform: translate(-10px, 10px) scale(0.97); }
+}
+@keyframes blob-drift-alt {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    40%      { transform: translate(-25px, 15px) scale(1.05); }
+    75%      { transform: translate(15px, -10px) scale(0.95); }
+}
+@keyframes grid-shimmer {
+    0%, 100% { opacity: 0.04; }
+    50%      { opacity: 0.08; }
+}
+@keyframes sweep-gradient {
+    0%   { transform: translateX(-40%) rotate(12deg); }
+    100% { transform: translateX(40%)  rotate(12deg); }
+}
+@keyframes success-exit {
+    to { transform: scale(1.03); opacity: 0; }
+}
+@keyframes slide-down-in {
+    from { max-height: 0;    opacity: 0; padding-top: 0; padding-bottom: 0; }
+    to   { max-height: 120px; opacity: 1; }
+}
+@keyframes pulse-in {
+    0%   { transform: scale(0.96); opacity: 0; }
+    60%  { transform: scale(1.02); opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+}
+@keyframes spinner-spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-panel-left {
+    animation: panel-slide-left 800ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.animate-panel-right {
+    animation: panel-slide-up 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    animation-delay: 100ms;
+}
+.animate-logo-drop {
+    animation: logo-drop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.animate-stagger {
+    animation: stagger-fade 550ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.animate-pulse-in {
+    animation: pulse-in 400ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.animate-slide-down {
+    animation: slide-down-in 300ms ease-out both;
+}
+.animate-blob {
+    animation: blob-drift 22s ease-in-out infinite;
+}
+.animate-blob-alt {
+    animation: blob-drift-alt 28s ease-in-out infinite;
+}
+.animate-grid-shimmer {
+    animation: grid-shimmer 8s ease-in-out infinite;
+}
+.animate-sweep {
+    animation: sweep-gradient 14s ease-in-out infinite alternate;
+}
+.animate-success-exit {
+    animation: success-exit 450ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Glass surface used by the login form card. */
+.login-glass {
+    background-color: hsl(var(--card) / 0.72);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid hsl(var(--glass-border) / var(--glass-border-alpha));
+}
+[data-theme="dark"] .login-glass {
+    background-color: hsl(var(--card) / 0.55);
+}
+
+/* Custom spinner for the submit button loading state — no icon dep. */
+.login-spinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    border: 2px solid hsl(0 0% 100% / 0.35);
+    border-top-color: hsl(0 0% 100%);
+    animation: spinner-spin 650ms linear infinite;
+}
+
+/* Brand-red CTA used on the Sign in button. */
+.btn-brand {
+    background-color: hsl(var(--brand-red));
+    color: hsl(0 0% 100%);
+    transition:
+        background-color 180ms ease,
+        transform 180ms ease,
+        box-shadow 180ms ease;
+    box-shadow: 0 8px 20px -12px hsl(var(--brand-red) / 0.7);
+}
+.btn-brand:hover:not(:disabled) {
+    background-color: hsl(var(--brand-red-hover));
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px -14px hsl(var(--brand-red) / 0.75);
+}
+.btn-brand:active:not(:disabled) {
+    transform: translateY(0);
+}
+.btn-brand-success {
+    background-color: hsl(142 72% 38%) !important;
+    box-shadow: 0 10px 24px -12px hsl(142 72% 38% / 0.8) !important;
+}
+
+/* Refined input focus used on the login form. */
+.login-input {
+    background-color: hsl(var(--background) / 0.55);
+    transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+.login-input:focus {
+    outline: none;
+    border-color: hsl(var(--brand-red));
+    box-shadow: 0 0 0 3px hsl(var(--brand-red) / 0.22);
+    background-color: hsl(var(--background) / 0.85);
+}

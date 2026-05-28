@@ -1,0 +1,8 @@
+.env
+.env.*
+.worktrees/
+node_modules/
+
+# Phase 1.6: allow env templates to be committed (root infra repo policy)
+!.env.example
+.claude/

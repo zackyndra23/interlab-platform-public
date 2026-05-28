@@ -1,0 +1,99 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: interlab-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - interlab-data-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: interlab-redis
+    restart: unless-stopped
+    command: >
+      sh -c "redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - interlab-data-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: interlab-minio
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - interlab-data-net
+      - traefik_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
+      - "traefik.http.middlewares.minio-console-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.minio-console-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.minio-console.rule=Host(`s3-minio.interlab-portal.com`)"
+      - "traefik.http.routers.minio-console.entrypoints=web"
+      - "traefik.http.routers.minio-console.middlewares=minio-console-redirect"
+      - "traefik.http.routers.minio-console.service=minio-console"
+      - "traefik.http.routers.minio-console-secure.rule=Host(`s3-minio.interlab-portal.com`)"
+      - "traefik.http.routers.minio-console-secure.entrypoints=websecure"
+      - "traefik.http.routers.minio-console-secure.tls=true"
+      - "traefik.http.routers.minio-console-secure.tls.certresolver=myresolver"
+      - "traefik.http.routers.minio-console-secure.service=minio-console"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+      - "traefik.http.middlewares.minio-s3-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.minio-s3-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.minio-s3.rule=Host(`s3-storage.interlab-portal.com`)"
+      - "traefik.http.routers.minio-s3.entrypoints=web"
+      - "traefik.http.routers.minio-s3.middlewares=minio-s3-redirect"
+      - "traefik.http.routers.minio-s3.service=minio-s3"
+      - "traefik.http.routers.minio-s3-secure.rule=Host(`s3-storage.interlab-portal.com`)"
+      - "traefik.http.routers.minio-s3-secure.entrypoints=websecure"
+      - "traefik.http.routers.minio-s3-secure.tls=true"
+      - "traefik.http.routers.minio-s3-secure.tls.certresolver=myresolver"
+      - "traefik.http.routers.minio-s3-secure.service=minio-s3"
+      - "traefik.http.services.minio-s3.loadbalancer.server.port=9000"
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  interlab-data-net:
+    external: true
+  traefik_default:
+    external: true

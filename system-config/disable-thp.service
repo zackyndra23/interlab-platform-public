@@ -1,0 +1,14 @@
+# Interlab infra — persist Transparent Huge Pages = madvise (spec §4, Postgres latency)
+# Deploy to: /etc/systemd/system/disable-thp.service
+# enable: sudo systemctl daemon-reload && sudo systemctl enable --now disable-thp.service
+[Unit]
+Description=Set THP to madvise (Postgres latency)
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'echo madvise > /sys/kernel/mm/transparent_hugepage/enabled'
+
+[Install]
+WantedBy=multi-user.target

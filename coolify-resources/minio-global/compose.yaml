@@ -1,0 +1,49 @@
+# minio-global — Mechanism B (direct `docker compose`, deviation #8).
+# Run from repo root:  sudo docker compose -f coolify-resources/minio-global/compose.yaml up -d
+#
+# S3 API (:9000) is INTERNAL-ONLY (no host publish) — reachable on interlab-global as
+# http://minio-global:9000 (Supabase Storage backend, Phase 1C). Console (:9001) bound to
+# loopback now; Tailscale-bound by the Phase 1B firewall.
+# Root creds from /root/coolify-resources/minio-global/.env (chmod 600, off-git, Pilihan B).
+# Bucket + scoped service-account = DEFERRED to tomorrow (pairs with Supabase Storage).
+services:
+  minio-global:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: minio-global
+    restart: unless-stopped
+    networks: [interlab-global, traefik_default]
+    command: server /data --console-address ":9001"
+    env_file:
+      - /root/coolify-resources/minio-global/.env
+    volumes:
+      - minio_global_data:/data
+    ports:
+      - "100.117.214.25:9101:9001"   # console on Tailscale IP → http://100.117.214.25:9101
+    mem_limit: 1g
+    # NOTE: no internal healthcheck — minio image bundles no curl/wget/mc; verified externally via mc.
+    # Cutover: serve the S3 API (:9000) at s3-storage.interlab-portal.com via Traefik so the
+    # app's presigned URLs (signed with global creds) resolve here. Replaces the old data-stack
+    # interlab-minio route, which is retired at cutover.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
+      - "traefik.http.middlewares.minioglobal-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.minioglobal-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.minioglobal-s3.rule=Host(`s3-storage.interlab-portal.com`)"
+      - "traefik.http.routers.minioglobal-s3.entrypoints=web"
+      - "traefik.http.routers.minioglobal-s3.middlewares=minioglobal-redirect"
+      - "traefik.http.routers.minioglobal-s3-secure.rule=Host(`s3-storage.interlab-portal.com`)"
+      - "traefik.http.routers.minioglobal-s3-secure.entrypoints=websecure"
+      - "traefik.http.routers.minioglobal-s3-secure.tls=true"
+      - "traefik.http.routers.minioglobal-s3-secure.tls.certresolver=myresolver"
+      - "traefik.http.routers.minioglobal-s3-secure.service=minioglobal-s3"
+      - "traefik.http.services.minioglobal-s3.loadbalancer.server.port=9000"
+
+networks:
+  interlab-global:
+    external: true
+  traefik_default:
+    external: true
+
+volumes:
+  minio_global_data:

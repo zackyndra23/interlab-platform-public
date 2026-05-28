@@ -1,0 +1,37 @@
+# netdata — Phase 1D, Mechanism B. System + per-container metrics, Tailscale-only.
+# Run: sudo docker compose -f coolify-resources/netdata/compose.yaml up -d
+# Guardrails (spec §9): bound to Tailscale IP (no public), Netdata Cloud DECLINED
+# (no claim token + DO_NOT_TRACK), ring-buffer retention (dbengine disk-capped ~3d),
+# the ONLY metrics tool (no Prometheus/Grafana/Loki).
+name: netdata
+services:
+  netdata:
+    image: netdata/netdata:v1.47.5
+    container_name: netdata
+    restart: unless-stopped
+    pid: host
+    hostname: vps-lafayette-01
+    cap_add: [SYS_PTRACE, SYS_ADMIN]
+    security_opt: [apparmor:unconfined]
+    ports:
+      - "100.117.214.25:19999:19999"   # Tailscale IP only
+    environment:
+      DO_NOT_TRACK: "1"
+      # ring-buffer retention cap (~3 days for a single host)
+      NETDATA_DBENGINE_MULTIHOST_DISK_SPACE_MB: "512"
+    volumes:
+      - netdataconfig:/etc/netdata
+      - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    mem_limit: 400m
+
+volumes:
+  netdataconfig:
+  netdatalib:
+  netdatacache:

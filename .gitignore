@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Environment & plaintext secrets — NEVER commit
+.env
+.env.*
+!.env.template
+!.env.example
+
+# Consolidated apps (Phase 1.6 monorepo) — per-app secrets off-git, build artifacts ignored
+apps/**/.env
+!apps/**/.env.example
+apps/**/node_modules/
+apps/**/.next/
+apps/**/dist/
+apps/**/build/
+apps/**/coverage/
+apps/**/.worktrees/
+
+# Secrets — Pilihan B (2026-05-25): NO git-stored secrets. SOPS abandoned.
+# Generated just-in-time on server -> Coolify encrypted env (canonical) +
+# /root/.coolify-secrets-backup.txt (chmod 600). Ignore so they can NEVER be recommitted.
+secrets/
+.sops.yaml
+decrypted-secrets/
+*.decrypted
+
+# age private keys — NEVER commit (lives in ~/.config/sops/age/ + Bitwarden + offline)
+keys.txt
+*.agekey
+age-key*.txt
+
+# Local backup staging
+/var-backups/
+backups/local/
+
+# Temp / scratch
+*.tmp
+*.bak
+*.log
+*.swp
+.DS_Store
+
+# Rendered bootstrap (plaintext password — gitignored per experiment pattern)
+init/01-bootstrap.sql
+apps/**/.claude/

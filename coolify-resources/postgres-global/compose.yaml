@@ -1,0 +1,87 @@
+# postgres-global — Mechanism B (direct `docker compose`, deviation #8). supabase/postgres PG15.
+# Run from repo root:  docker compose -f coolify-resources/postgres-global/compose.yaml up -d
+#
+# Tuning is applied via `-c` overrides, NOT config_file replacement, to PRESERVE the image's
+# shared_preload_libraries (pg_cron, pgsodium, supabase_vault, pg_net, pg_tle, timescaledb, ...)
+# + include directives that the substrate (auth/storage/realtime roles+schemas) and Phase 1C need.
+# Default CMD `postgres -D /etc/postgresql` is kept (the config dir with those preload libs).
+#
+# Secret: POSTGRES_PASSWORD comes from /root/coolify-resources/postgres-global/.env (chmod 600,
+# off-git, Pilihan B). Mirror key in /root/.coolify-secrets-backup.txt.
+services:
+  postgres-global:
+    image: supabase/postgres:15.8.1.085
+    container_name: postgres-global
+    restart: unless-stopped
+    networks: [interlab-global]
+    ports:
+      - "127.0.0.1:5440:5432"   # admin/DBeaver via SSH tunnel only (internal otherwise; data-net keeps 5432)
+    env_file:
+      - /root/coolify-resources/postgres-global/.env
+    command:
+      - postgres
+      - -D
+      - /etc/postgresql
+      - -c
+      - shared_buffers=1536MB
+      - -c
+      - effective_cache_size=6GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=512MB
+      - -c
+      - max_connections=200
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - checkpoint_timeout=15min
+      - -c
+      - wal_compression=on
+      - -c
+      - synchronous_commit=on
+      - -c
+      - huge_pages=try
+      - -c
+      - timezone=UTC
+      - -c
+      - log_timezone=Asia/Jakarta
+      - -c
+      - log_min_duration_statement=1000
+      - -c
+      - log_connections=on
+      - -c
+      - log_disconnections=on
+      - -c
+      - archive_mode=on
+      - -c
+      - "archive_command=/wal-archive/postgres-wal-archive.sh %p %f"
+    volumes:
+      - pg_global_data:/var/lib/postgresql/data
+      - ../../scripts/backup/postgres-wal-archive.sh:/wal-archive/postgres-wal-archive.sh:ro
+      - /var/backups/wal-stage:/wal-stage
+    mem_limit: 4g
+    ulimits:
+      nofile: { soft: 65536, hard: 65536 }
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+networks:
+  interlab-global:
+    external: true
+
+volumes:
+  pg_global_data:
+    external: true

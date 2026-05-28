@@ -1,0 +1,25 @@
+# uptime-kuma — Phase 1D, Mechanism B. Endpoint monitoring, Tailscale-only.
+# Run: sudo docker compose -f coolify-resources/uptime-kuma/compose.yaml up -d
+# Bound to the Tailscale IP so it's reachable only over the tailnet (no public exposure,
+# independent of the 1B firewall). On interlab-global so it can also monitor internal
+# services (postgres-global:5432, minio-global:9000, supabase-kong:8000) by name.
+# Admin account + monitors are set on first-boot via the web UI (http://100.117.214.25:3001).
+name: uptime-kuma
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1.23.16
+    container_name: uptime-kuma
+    restart: unless-stopped
+    networks: [interlab-global]
+    volumes:
+      - uptime_kuma_data:/app/data
+    ports:
+      - "100.117.214.25:3001:3001"   # Tailscale IP only
+    mem_limit: 256m
+
+networks:
+  interlab-global:
+    external: true
+
+volumes:
+  uptime_kuma_data:
